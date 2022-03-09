@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 
 postUrl = "https://redcap.wakehealth.edu/redcap/api/"
-token_file = "/home/pi/Documents/abaxis_istat/token.auth"
+token_file = "/home/pi/Documents/poct1_a/token.auth"
 labs_token = None
 chem8_token = None
 cg4_token = None

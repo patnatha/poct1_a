@@ -1,1 +1,3 @@
 *.auth
+*.pyc
+__pycache__/*
