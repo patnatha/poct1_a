@@ -10,11 +10,11 @@ def get_msg(cs):
 
     while True:
         #Read one byte at a time
-        byte = cs.recv(1).decode("utf-8", errors='ignore')
+        byte = cs.recv(1)
+        byte = byte.decode("utf-8", errors='ignore')
         wholeMsg = wholeMsg + byte
-        if(wholeMsg[len(wholeMsg) - 1] == '\r'):
+        if(len(wholeMsg) > 0 and wholeMsg[len(wholeMsg) - 1] == '\r'):
             wholeMsg = wholeMsg.strip('/r') + '\n'
-            print(wholeMsg)
 
         if("OBX|40" in wholeMsg):
             while True:
@@ -80,5 +80,5 @@ while True:
 
     #Close the socket connection
     clientsocket.sendall(b'THANKS')
-    #clientsocket.close()
+    clientsocket.close()
 
