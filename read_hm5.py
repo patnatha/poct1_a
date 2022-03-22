@@ -60,10 +60,7 @@ def parse_obs(theMsg):
     test_info["datetime"] = testDate.strftime("%Y-%m-%d %H:%M:%S")
     test_info["version"] = version
 
-    print(test_info)
-    print(datas)
-
-    return(datas, test_info)
+    return(test_info, datas)
 
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serversocket.bind(('0.0.0.0', 8080))
@@ -77,6 +74,32 @@ while True:
     #Parse the hello message
     msg = get_msg(clientsocket)
     test_info, data = parse_obs(msg)
+
+    #print(test_info)
+    #print(data)
+
+    #Build the test_info post data structure
+    post_test_info = {"vendor": "abaxis", "model": "hm5", "serial": "360011240"}
+    post_test_info["device"] = test_info["version"]
+    post_test_info["name"] = test_info["test"]
+    post_test_info["lot_number"] = None
+    post_test_info["expiration_date"] = None
+    data["datetime"] = test_info["datetime"]
+    data["name"] = test_info["name"]
+    post_test_info["json_data"] = json.dumps(data)
+
+    post_test_table = None
+    #post_test_table = rc.post_redcap(post_test_info, rc.which_table("TEST_INFO"))
+
+    #Build the cbc post data structure
+    datalist = ["name", "datetime", "wbc","lym","neu","eos","bas","lym%","mon%","neu%","eos%","bas%","rbc","hgb","hct","mcv","mch","mchc","rdwc","rdws","plt","mpv","pct","pdwc","pdws"]
+    data_post = {}
+    for item in data:
+        if(item.lower() in datalist):
+            data_post[item.lower().replace("%", "_percent")] = data[item]
+    
+    post_cbc = rc.post_redcap(data_post, rc.which_table("CBC"))
+    print(post_test_table, post_cbc)
 
     #Close the socket connection
     clientsocket.sendall(b'THANKS')
