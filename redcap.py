@@ -8,11 +8,13 @@ token_file = "/home/pi/Documents/poct1_a/token.auth"
 labs_token = None
 chem8_token = None
 cg4_token = None
+cbc_token = None
 
 def load_tokens():
     global labs_token
     global chem8_token
     global cg4_token
+    global cbc_token
     f = open(token_file)
     for line in f:
         parsed = (line.strip("\n").split(":"))
@@ -24,6 +26,8 @@ def load_tokens():
                 chem8_token = parsed[1]
             elif(parsed[0] == 'cg4'):
                 cg4_token = parsed[1]
+            elif(parsed[0] == "cbc"):
+                cbc_token = parsed[1]
     f.close()
 load_tokens()
 
@@ -144,6 +148,8 @@ def which_table(test_name):
         return cg4_token
     elif("TEST_INFO" in test_name):
         return labs_token
+    elif("CBC" in test_name):
+        return cbc_token
     else:
         print("which_table (" + test_name + "): Doesn't exists")
         #sys.exit(1)
