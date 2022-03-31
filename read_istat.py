@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import board
 import digitalio
 
-#Output LED
+#Output LED for if currently uploading
 uploadLed = digitalio.DigitalInOut(board.D21)
 uploadLed.direction = digitalio.Direction.OUTPUT
 uploadLed.value = False
