@@ -1,3 +1,4 @@
 *.auth
 *.pyc
 __pycache__/*
+*.err
