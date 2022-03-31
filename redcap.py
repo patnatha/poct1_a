@@ -97,9 +97,11 @@ def parse_value(theCol, theVal):
             return convert_one_decimal(float(theVal))
         elif(theCol == "ph" or theCol == "temp_ph"):
             return convert_three_decimal(float(theVal))
-        elif(theCol == "datetime" or theCol == "upload_datetime"):
+        elif(theCol == "datetime"):
             datetime_object = datetime.strptime(theVal, "%Y-%m-%dT%H:%M:%S.%f")
             return datetime_object.strftime("%Y-%m-%d %H:%M:%S")
+        elif(theCol == "upload_datetime"):
+            return theVal.strftime("%Y-%m-%d %H:%M:%S")
         elif(theCol == "name" or theCol == "temp"):
             return(theVal)
     except Exception as err:

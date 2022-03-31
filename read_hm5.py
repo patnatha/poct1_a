@@ -89,17 +89,22 @@ while True:
     post_test_info["json_data"] = json.dumps(data)
 
     post_test_table = None
-    #post_test_table = rc.post_redcap(post_test_info, rc.which_table("TEST_INFO"))
+    post_test_table = rc.post_redcap(post_test_info, rc.which_table("TEST_INFO"))
 
     #Build the cbc post data structure
-    datalist = ["name", "datetime", "wbc","lym","neu","eos","bas","lym%","mon%","neu%","eos%","bas%","rbc","hgb","hct","mcv","mch","mchc","rdwc","rdws","plt","mpv","pct","pdwc","pdws"]
+    datalist = ["name", "datetime", "wbc","lym","mon", "neu","eos","bas","lym%","mon%","neu%","eos%","bas%","rbc","hgb","hct","mcv","mch","mchc","rdwc","rdws","plt","mpv","pct","pdwc","pdws"]
     data_post = {}
+    data_post["upload_datetime"] = rc.parse_value("upload_datetime", 
+                                                     datetime.now())
     for item in data:
         if(item.lower() in datalist):
             data_post[item.lower().replace("%", "_percent")] = data[item]
-    
+    #print(data_post)
+
     post_cbc = rc.post_redcap(data_post, rc.which_table("CBC"))
-    print(post_test_table, post_cbc)
+    
+    #Print post results
+    print("Posted Msg:", post_test_table, post_cbc)
 
     #Close the socket connection
     clientsocket.sendall(b'THANKS')
