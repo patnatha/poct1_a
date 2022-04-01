@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 import board
 import digitalio
+from datetime import datetime
 
 #Output LED for if currently uploading
 uploadLed = digitalio.DigitalInOut(board.D21)
@@ -238,34 +239,28 @@ while True:
          
             #Build the record for a given test type for posting
             dataoutput = {"name": data[0]["name"]}
-            dataoutput["datetime"] = rc.parse_value("datetime", data[0]["datetime"])
-            dataoutput["upload_datetime"] = rc.parse_value("upload_datetime", datetime.now())
+            dataoutput["datetime"] = rc.parse_value("datetime", 
+                                                        data[0]["datetime"])
+            dataoutput["upload_datetime"] = rc.parse_value("upload_datetime", 
+                                                        datetime.now())
             for item in data:
                 dataoutput[rc.convert_colname(item["type"])] = rc.parse_value(item["type"],item["value"])
             pp.pprint(dataoutput)
 
-            #Check that there is not empty fields
-            to_cont = True
-            for item in dataoutput:
-                if(dataoutput[item] == None): 
-                    to_cont = False
+            #Post the records to the appropiate table
+            post_test_table = rc.post_redcap(dataoutput, 
+                    rc.which_table(test_info["name"]))
+            
+            #Post the test metadata
+            post_test_info = rc.post_redcap(test_info, 
+                    rc.which_table("TEST_INFO"))
+           
+            #Print the results
+            print("Sucessful Posting:", post_test_info, post_test_table)
 
-            #Acknowledge the upload
-            if(to_cont):
-                #Post the records to the appropiate table
-                post_test_table = rc.post_redcap(dataoutput, 
-                        rc.which_table(test_info["name"]))
-                
-                #Post the test metadata
-                post_test_info = rc.post_redcap(test_info, 
-                        rc.which_table("TEST_INFO"))
-               
-                #Print the results
-                print("Sucessful Posting:", post_test_info, post_test_table)
-
-                #Acknowlege the sucessfull posting
-                if(post_test_info == 1 or post_test_table == 1):
-                    ack(clientsocket, hdr)
+            #Acknowlege the sucessfull posting
+            if(post_test_info == 1 or post_test_table == 1):
+                ack(clientsocket, hdr)
 
         #Close the socket connection
         clientsocket.close()
