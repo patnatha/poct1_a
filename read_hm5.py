@@ -3,7 +3,18 @@ import pprint
 import json
 import re
 from datetime import datetime
-import redcap as rc
+#import redcap as rc
+import sys
+
+def display_msg(wbc, upload_res):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(("localhost", 34567))
+        theMsg = {"WBC":wbc, "redcap":upload_res}
+        s.sendall(str.encode(json.dumps(theMsg) + "\n"))
+        s.close()
+    except Exception as err:
+        print("display_msg error:", err)
 
 def get_msg(cs):
     wholeMsg = ""
@@ -97,15 +108,21 @@ while True:
         data_post = {}
         data_post["upload_datetime"] = rc.parse_value("upload_datetime", 
                                                          datetime.now())
+        theWBC = None
         for item in data:
             if(item.lower() in datalist):
                 data_post[item.lower().replace("%", "_percent")] = data[item]
+            if(item.lower() == "wbc"):
+                theWBC = data[item]
         #print(data_post)
 
         post_cbc = rc.post_redcap(data_post, rc.which_table("CBC"))
         
         #Print post results
         print("Posted Msg:", post_test_table, post_cbc)
+
+        #Send a display message
+        display_msg(theWBC, post_cbc)
 
         #Close the socket connection
         clientsocket.sendall(b'THANKS')
