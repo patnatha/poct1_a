@@ -3,7 +3,7 @@ import pprint
 import json
 import re
 from datetime import datetime
-#import redcap as rc
+import redcap as rc
 import sys
 
 def display_msg(wbc, upload_res):
@@ -100,7 +100,6 @@ while True:
         data["name"] = test_info["name"]
         post_test_info["json_data"] = json.dumps(data)
 
-        post_test_table = None
         post_test_table = rc.post_redcap(post_test_info, rc.which_table("TEST_INFO"))
 
         #Build the cbc post data structure
@@ -117,7 +116,7 @@ while True:
         #print(data_post)
 
         post_cbc = rc.post_redcap(data_post, rc.which_table("CBC"))
-        
+
         #Print post results
         print("Posted Msg:", post_test_table, post_cbc)
 
@@ -125,7 +124,7 @@ while True:
         display_msg(theWBC, post_cbc)
 
         #Close the socket connection
-        clientsocket.sendall(b'THANKS')
+        clientsocket.sendall(b'1')
         clientsocket.close()
     except Exception as err:
         print("ERROR:", err)
