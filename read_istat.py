@@ -5,6 +5,14 @@ import re
 import redcap as rc
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
+import board
+import digitalio
+from datetime import datetime
+
+#Output LED for if currently uploading
+uploadLed = digitalio.DigitalInOut(board.D21)
+uploadLed.direction = digitalio.Direction.OUTPUT
+uploadLed.value = False
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -193,62 +201,71 @@ serversocket.bind(('0.0.0.0', 8080))
 serversocket.listen(1)
 
 while True:
-    #accept connections from outside
-    (clientsocket, address) = serversocket.accept()
-   
-    #Parse the hello message
-    msg = get_msg(clientsocket)
-    if(is_terminated(msg)): continue
-    hdr = get_hdr(msg)
-    vendor, model, device, serial = get_device(msg)
-    ack(clientsocket, hdr)
-    print("Ready to send results from:", vendor, model, device, serial)
+    try:
+        #accept connections from outside
+        (clientsocket, address) = serversocket.accept()
+        uploadLed.value = True
 
-    #Parse device status message
-    msg = get_msg(clientsocket)
-    if(is_terminated(msg)): continue
-    hdr = get_hdr(msg) 
-    ack(clientsocket, hdr)
-    obs_to_send = parse_device_status(msg)
-    print("Number of unsent records:", obs_to_send)
+        #Parse the hello message
+        msg = get_msg(clientsocket)
+        if(is_terminated(msg)): continue
+        hdr = get_hdr(msg)
+        vendor, model, device, serial = get_device(msg)
+        ack(clientsocket, hdr)
+        print("Ready to send results from:", vendor, model, device, serial)
 
-    #Get unsent observations
-    for get_it in range(obs_to_send):
-        #Request the next object
-        obs = get_obs(clientsocket, hdr)
-        if(is_terminated(obs)): break
-        hdr, data, test_info = extract_obs(obs)
+        #Parse device status message
+        msg = get_msg(clientsocket)
+        if(is_terminated(msg)): continue
+        hdr = get_hdr(msg) 
+        ack(clientsocket, hdr)
+        obs_to_send = parse_device_status(msg)
+        print("Number of unsent records:", obs_to_send)
 
-        #Build the test info struct yo post
-        test_info["vendor"] = vendor
-        test_info["model"] = model
-        test_info["device"] = device
-        test_info["serial"] = serial
-        test_info["json_data"] = json.dumps(data)
-        #pp.pprint(data)
-     
-        #Build the record for a given test type for posting
-        dataoutput = {"name": data[0]["name"]}
-        dataoutput["datetime"] = rc.parse_value("datetime", data[0]["datetime"])
-        for item in data:
-            dataoutput[rc.convert_colname(item["type"])] = rc.parse_value(item["type"],item["value"])
-        pp.pprint(dataoutput)
+        #Get unsent observations
+        for get_it in range(obs_to_send):
+            #Request the next object
+            obs = get_obs(clientsocket, hdr)
+            if(is_terminated(obs)): break
+            hdr, data, test_info = extract_obs(obs)
 
-        #Check that there is not empty fields
-        to_cont = True
-        for item in dataoutput:
-            if(dataoutput[item] == None): 
-                to_cont = False
+            #Build the test info struct yo post
+            test_info["vendor"] = vendor
+            test_info["model"] = model
+            test_info["device"] = device
+            test_info["serial"] = serial
+            test_info["json_data"] = json.dumps(data)
+            #pp.pprint(data)
+         
+            #Build the record for a given test type for posting
+            dataoutput = {"name": data[0]["name"]}
+            dataoutput["datetime"] = rc.parse_value("datetime", 
+                                                        data[0]["datetime"])
+            dataoutput["upload_datetime"] = rc.parse_value("upload_datetime", 
+                                                        datetime.now())
+            for item in data:
+                dataoutput[rc.convert_colname(item["type"])] = rc.parse_value(item["type"],item["value"])
+            pp.pprint(dataoutput)
 
-        #Acknowledge the upload
-        if(to_cont):
+            #Post the records to the appropiate table
             post_test_table = rc.post_redcap(dataoutput, 
                     rc.which_table(test_info["name"]))
+            
+            #Post the test metadata
             post_test_info = rc.post_redcap(test_info, 
                     rc.which_table("TEST_INFO"))
+           
+            #Print the results
             print("Sucessful Posting:", post_test_info, post_test_table)
-        ack(clientsocket, hdr)
 
-    #Close the socket connection
-    clientsocket.close()
+            #Acknowlege the sucessfull posting
+            if(post_test_info == 1 or post_test_table == 1):
+                ack(clientsocket, hdr)
+
+        #Close the socket connection
+        clientsocket.close()
+    except Exception as err:
+        print("ERROR:", err)
+
+    uploadLed.value = False
 
