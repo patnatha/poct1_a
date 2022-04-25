@@ -24,20 +24,21 @@ def get_msg(cs):
         byte = cs.recv(1)
         byte = byte.decode("utf-8", errors='ignore')
         wholeMsg = wholeMsg + byte
-        if(len(wholeMsg) > 0 and wholeMsg[len(wholeMsg) - 1] == '\r'):
-            wholeMsg = wholeMsg.strip('/r') + '\n'
+        if(len(wholeMsg) > 0 and wholeMsg[len(wholeMsg) - 1] == '\n'):
+            wholeMsg = wholeMsg.strip('\n').strip('\r') + '\n'
+            print(wholeMsg)
 
         if("OBX|40" in wholeMsg):
             while True:
                 byte = cs.recv(1).decode("utf-8", errors='ignore')
                 wholeMsg = wholeMsg + byte
-                if(byte == '\r'):
-                    wholeMsg = wholeMsg.strip('\r') + '\n'
+                if(byte == '\n'):
+                    wholeMsg = wholeMsg.strip('\n').strip('\r') + '\n'
                     try:
                         cs.recv(1)
                     except:
                         print("MESSAGE RECIEVED")
-
+                    print(wholeMsg)
                     return(wholeMsg)
 
 def parse_obs(theMsg):
@@ -124,7 +125,7 @@ while True:
         display_msg(theWBC, post_cbc)
 
         #Close the socket connection
-        clientsocket.sendall(b'1')
+        clientsocket.sendall(b'0')
         clientsocket.close()
     except Exception as err:
         print("ERROR:", err)
