@@ -24,21 +24,21 @@ def get_msg(cs):
         byte = cs.recv(1)
         byte = byte.decode("utf-8", errors='ignore')
         wholeMsg = wholeMsg + byte
-        if(len(wholeMsg) > 0 and wholeMsg[len(wholeMsg) - 1] == '\n'):
-            wholeMsg = wholeMsg.strip('\n').strip('\r') + '\n'
-            print(wholeMsg)
+        if(len(wholeMsg) > 0 and wholeMsg[len(wholeMsg) - 1] == '\r'):
+            wholeMsg = wholeMsg.strip('\r') + '\n'
 
         if("OBX|40" in wholeMsg):
             while True:
                 byte = cs.recv(1).decode("utf-8", errors='ignore')
                 wholeMsg = wholeMsg + byte
-                if(byte == '\n'):
-                    wholeMsg = wholeMsg.strip('\n').strip('\r') + '\n'
+                if(byte == '\r'):
+                    wholeMsg = wholeMsg.strip('\r') + '\n'
                     try:
-                        cs.recv(1)
-                    except:
-                        print("MESSAGE RECIEVED")
-                    print(wholeMsg)
+                        #Read rest of message
+                        while True:
+                            cs.recv(1)
+                    except Exception as err:
+                        print("MESSAGE RECIEVED",err)
                     return(wholeMsg)
 
 def parse_obs(theMsg):
@@ -88,9 +88,6 @@ while True:
         msg = get_msg(clientsocket)
         test_info, data = parse_obs(msg)
 
-        #print(test_info)
-        #print(data)
-
         #Build the test_info post data structure
         post_test_info = {"vendor": "abaxis", "model": "hm5", "serial": "360011240"}
         post_test_info["device"] = test_info["version"]
@@ -114,7 +111,6 @@ while True:
                 data_post[item.lower().replace("%", "_percent")] = data[item]
             if(item.lower() == "wbc"):
                 theWBC = data[item]
-        #print(data_post)
 
         post_cbc = rc.post_redcap(data_post, rc.which_table("CBC"))
 
